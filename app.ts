@@ -9,7 +9,6 @@ import { config } from "dotenv";
 config()
 
 
-
 import cors from "cors"
 const dbURI = "mongodb://127.0.0.1:27017/MinecraftNotesDB"
 const whitelist = ["http://localhost:5173", "http://localhost:3000"]

@@ -1,4 +1,5 @@
-import { GetUser, GetCollection, GetCollections, GetBookshelf, GetBookshelfs, GetBook,GetBooks } from "../../Controllers/getFromDbController"
+import { GetUser, GetCollection, GetCollections, GetBookshelf, GetBookshelves, GetBook, GetBooks } from "../../Controllers/getFromDbController"
+import { AddNewCollection } from "../../Controllers/setToDbController"
 import { makeExecutableSchema } from '@graphql-tools/schema'
 
 const schema = `#graphql
@@ -14,9 +15,10 @@ const schema = `#graphql
     name:String!
     description:String!
     numberOfBooks:Int!
-    bookshelfs:[Bookshelf!]!
+    bookshelves:[Bookshelf!]!
     owner:String!
-    sharedWith:[[String,String]]! #just userId and username go's here to check if the user have access to this collection
+    sharedWith:[[String]]! #just userId and username go's here to check if the user have access to this collection
+    sharingAccess:Boolean!
   }
 
   type Bookshelf{
@@ -24,7 +26,7 @@ const schema = `#graphql
     numberOfBooks:Int!
     filledPlaces:[Boolean!]!
     books:[Book]!
-    collection:Collection!
+    parentCollection:Collection!
   }
 
   type Book{
@@ -46,37 +48,44 @@ const schema = `#graphql
     book(id:String!,pageLimit:Int,offset:Int):Book
   }
 
-  # type Mutation {
-  #   addCollection()
-  # }
+  type Mutation {
+    addCollection(name:String!,description:String!,sharedWith:[String],sharingAccess:Boolean):Collection
+  }
 `
 
 
 
 const resolvers = {
   Query: {
-    user: (_: any, __: any, { currentUser }: { currentUser: String }) => GetUser(currentUser),
-    collection: (_: any, { id }: { id: String }, { currentUser }: { currentUser: String }) => GetCollection(id, currentUser), // only owned collection or shred one are accessible
-    bookshelf: (_: any, { id }: { id: String }, { currentUser }: { currentUser: String }) => GetBookshelf(id, currentUser),
-    book: (_: any, { id }: { id: String }, { currentUser }: { currentUser: String }) => { GetBook(id, currentUser) }
+    user: (_: any, __: any, { currentUser }: { currentUser: string }) => GetUser(currentUser),
+    collection: (_: any, { id }: { id: string }, { currentUser }: { currentUser: string }) => GetCollection(id, currentUser), // only owned collection or shred one are accessible
+    bookshelf: (_: any, { id }: { id: string }, { currentUser }: { currentUser: string }) => GetBookshelf(id, currentUser),
+    book: (_: any, { id }: { id: string }, { currentUser }: { currentUser: string }) => { GetBook(id, currentUser) }
   },
   User: {
-    collectionOwned: ({ collectionOwned }: { collectionOwned: [String] }) =>
+    collectionOwned: ({ collectionOwned }: { collectionOwned: string[] }) =>
       GetCollections(collectionOwned),
-    collectionShared: ({ collectionShared }: { collectionShared: [String] }) =>
+    collectionShared: ({ collectionShared }: { collectionShared: string[] }) =>
       GetCollections(collectionShared)
   },
   Collection: {
-    bookshelfs: ({ bookshelfs }: { bookshelfs: [String] }) => GetBookshelfs(bookshelfs),
+    bookshelves: ({ bookshelves }: { bookshelves: string[] }) => GetBookshelves(bookshelves),
   },
   Bookshelf: {
-    books: ({ books }:{ books: [String] })=>GetBooks(books)
+    books: ({ books }: { books: string[] }) => GetBooks(books),
+    parentCollection: ({ parentCollection }: { parentCollection: string }, args: any, { currentUser }: { currentUser: string }) =>
+      GetCollection(parentCollection, currentUser)
+  },
+
+  Mutation: {
+    addCollection: (_: any,
+      { name, description, sharedWith, sharingAccess }: { name: string, description: string, sharedWith?: string[], sharingAccess?: boolean },
+      { currentUser }: { currentUser: string }) => {
+      return AddNewCollection({ userId: currentUser, name, description, sharedWith, sharingAccess })
+    }
   }
-
-  // Mutation: {
-
-  // },
 }
+
 
 
 export const executableSchema = makeExecutableSchema({ typeDefs: schema, resolvers })

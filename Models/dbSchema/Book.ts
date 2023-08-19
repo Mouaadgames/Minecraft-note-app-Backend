@@ -11,7 +11,12 @@ const bookSchema = new mongoose.Schema({
   name: { type: String, required: true },
   numberOfPages: { type: Number, required: true },
   icon: { type: Number, required: true },
-  pages: [pageSchema]
+  pages: [pageSchema],
+  access: {
+    readOnly: Boolean,
+    hiddenFrom: [String]
+  },
+  bookshelf: String
 })
 
 export const Book = mongoose.model("Book", bookSchema)
