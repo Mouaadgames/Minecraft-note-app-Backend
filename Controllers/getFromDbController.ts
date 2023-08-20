@@ -2,8 +2,13 @@ import { User } from "../Models/dbSchema/User";
 import { Collection } from "../Models/dbSchema/Collection";
 import { Bookshelf } from "../Models/dbSchema/Bookshelf";
 import { Book } from "../Models/dbSchema/Book";
-import { Types, isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
+import { doseItHaveAccessToThisBook, doseItHaveAccessToThisBookshelf, doseItHaveAccessToThisCollection } from "../Models/accessFunction";
+
+
+
 //utilFunction
+
 function validateIds(ids: String[]) {
   let resultIds = []
   let validateId
@@ -17,73 +22,11 @@ function validateIds(ids: String[]) {
   return resultIds
 }
 
-type collectionType = {
-  bookshelves: string[] | undefined;
-  sharedWith: string[][] | undefined;
-  globalWriteAccess: boolean | undefined;
-  owner?: string | undefined;
-  description?: string | undefined;
-  name?: string | undefined;
-  numberOfBooks?: number | undefined;
-}
-function doseItHaveAccessToThisCollection(userId: String, data: collectionType | null) {
-  if (userId === data?.owner) return true
-  if (!data?.sharedWith?.length) return false
-  for (let i = 0; i < data?.sharedWith.length; i++) {
-    const sharedWithUser = data?.sharedWith[i][0];
-    if (userId === sharedWithUser) return true
-  }
-  return false
-}
-
-type bookshelfType = {
-  name: string | undefined;
-  numberOfBooks: number | undefined;
-  filledPlaces: boolean[] | undefined;
-  books: string[] | undefined;
-  parentCollection: string | undefined;
-}
-async function doseItHaveAccessToThisBookshelf(userId: String, data: bookshelfType | null) {
-  const BookshelfCollectionId = data?.parentCollection
-  const collectionData = await Collection.findById(BookshelfCollectionId, { owner: true, sharedWith: true })
-  return doseItHaveAccessToThisCollection(userId, collectionData)
-}
-
-type bookType = {
-  name: string;
-  numberOfPages: number;
-  icon: number;
-  pages: Types.DocumentArray<{
-    lines: string[];
-    pageNumber?: number | undefined;
-  }>;
-  bookshelf?: string | undefined;
-  access?: {
-    readOnly?: boolean | undefined,
-    hiddenFrom: string[] | undefined
-  } | undefined;
-}
-async function doseItHaveAccessToThisBook(userId: String, data: bookType | null) {
-  const BookBookshelfId = data?.bookshelf
-  const hiddenFrom = data?.access?.hiddenFrom
-  if (hiddenFrom) {
-    for (let i = 0; i < hiddenFrom.length; i++) {
-      const hiddenUserId = hiddenFrom[i];
-      if (userId === hiddenUserId) {
-        return false
-      }
-    }
-  }
-  const bookshelfData = await Bookshelf.findById(BookBookshelfId, { parentCollection: true })
-  return doseItHaveAccessToThisBookshelf(userId, bookshelfData)
-}
-
-
 //User
 export async function GetUser(id: String) {
   if (!isValidObjectId(id)) {
     console.error("user id provided is not valid ");
-    return {}
+    return 
   }
   return await User.findById(id, { username: true, collectionOwned: true, collectionShared: true })
 }
@@ -91,8 +34,8 @@ export async function GetUser(id: String) {
 //collections
 export async function GetCollection(id: String, userId: String) {
   if (!isValidObjectId(id)) {
-    console.error("user id provided is not valid ");
-    return {}
+    console.error("collection id provided is not valid ");
+    return 
   }
   const collectionFromDb = await Collection.findById(id)
   if (!doseItHaveAccessToThisCollection(userId, collectionFromDb)) return {}
@@ -111,11 +54,11 @@ export async function GetCollections(ids: String[]) {
   return result
 }
 
-//bookshelfs
+//bookshelves
 export async function GetBookshelf(id: String, userId: String) {
   if (!isValidObjectId(id)) {
     console.error("Bookshelf id provided is not valid ");
-    return {}
+    return 
   }
   const bookshelfFromDb = await Bookshelf.findById(id)
   if (!doseItHaveAccessToThisBookshelf(userId, bookshelfFromDb)) return {}
@@ -125,7 +68,7 @@ export async function GetBookshelf(id: String, userId: String) {
 
 export async function GetBookshelves(ids: String[]) {
   const idsToWorkWith = validateIds(ids)
-  
+
   if (!idsToWorkWith.length) return [] // make the check to the other var after filtering bad ids
   const findQuery = { $or: idsToWorkWith.map(id => { return { _id: id } }) }
 
