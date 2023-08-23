@@ -10,19 +10,20 @@ const schema = `#graphql
     collectionShared:[Collection]!
   }
 
-  type Collection{
+  type Collection {
     id:String!
     name:String!
     description:String!
     numberOfBooks:Int!
     bookshelves:[Bookshelf!]!
     owner:String!
-    sharedWith:[[String]]! #just userId and username go's here to check if the user have access to this collection
-    sharingAccess:Boolean!
+    sharedWith:[String]! #just userId and username go's here to check if the user have access to this collection
+    globalWriteAccess:Boolean # false : read only true: read write null : no sharing 
   }
 
   type Bookshelf{
     id:String!
+    name:String!
     numberOfBooks:Int!
     filledPlaces:[Boolean!]!
     books:[Book]!
@@ -49,7 +50,7 @@ const schema = `#graphql
   }
 
   type Mutation {
-    addCollection(name:String!,description:String!,sharedWith:[String],sharingAccess:Boolean):Collection
+    addCollection(name:String!,description:String!,sharedWith:[String],globalWriteAccess:Boolean):Collection
   }
 `
 
@@ -79,9 +80,9 @@ const resolvers = {
 
   Mutation: {
     addCollection: (_: any,
-      { name, description, sharedWith, sharingAccess }: { name: string, description: string, sharedWith?: string[], sharingAccess?: boolean },
+      { name, description, sharedWith, globalWriteAccess }: { name: string, description: string, sharedWith?: string[], globalWriteAccess?: boolean },
       { currentUser }: { currentUser: string }) => {
-      return AddNewCollection({ userId: currentUser, name, description, sharedWith, sharingAccess })
+      return AddNewCollection({ userId: currentUser, name, description, sharedWith, globalWriteAccess })
     }
   }
 }

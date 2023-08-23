@@ -9,7 +9,7 @@ const collectionSchema = new mongoose.Schema({
 
   numberOfBooks: { type: Number, require: true }, // calculated on the server every time a book added
 
-  bookshelves: [String], // just ids // 8 bookshelfs are created with the creation of the collection
+  bookshelves: [String], // just ids // 8 bookshelves are created with the creation of the collection
 
   owner: { // owner id
     type: String,

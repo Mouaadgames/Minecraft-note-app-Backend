@@ -5,7 +5,18 @@ import { Book } from "../Models/dbSchema/Book";
 import { isValidObjectId } from "mongoose";
 import { doseItHaveAccessToThisBook, doseItHaveAccessToThisBookshelf, doseItHaveAccessToThisCollection } from "../Models/accessFunction";
 
+//types 
 
+type collection = {
+  _id: string;
+  bookshelves: string[];
+  sharedWith: string[][];
+  description?: string | undefined;
+  globalWriteAccess?: boolean | undefined;
+  name?: string | undefined;
+  numberOfBooks?: number | undefined;
+  owner?: string | undefined;
+}
 
 //utilFunction
 
@@ -26,7 +37,7 @@ function validateIds(ids: String[]) {
 export async function GetUser(id: String) {
   if (!isValidObjectId(id)) {
     console.error("user id provided is not valid ");
-    return 
+    return
   }
   return await User.findById(id, { username: true, collectionOwned: true, collectionShared: true })
 }
@@ -35,11 +46,13 @@ export async function GetUser(id: String) {
 export async function GetCollection(id: String, userId: String) {
   if (!isValidObjectId(id)) {
     console.error("collection id provided is not valid ");
-    return 
+    return
   }
   const collectionFromDb = await Collection.findById(id)
   if (!doseItHaveAccessToThisCollection(userId, collectionFromDb)) return {}
-  return collectionFromDb
+  const result: collection = JSON.parse(JSON.stringify(collectionFromDb))
+
+  return { ...result, id: result._id, sharedWith: result?.sharedWith.map((v) => v[1]) }
 }
 
 export async function GetCollections(ids: String[]) {
@@ -48,17 +61,22 @@ export async function GetCollections(ids: String[]) {
   if (!idsToWorkWith.length) return [] // make the check to the other var after filtering bad ids
   const findQuery = { $or: idsToWorkWith.map(id => { return { _id: id } }) }
 
-  const result = await Collection.find(findQuery)
+  const resultFromDb = await Collection.find(findQuery)
 
-  if (!result) return []
-  return result
+  if (!resultFromDb) return []
+
+  let result: collection[] = JSON.parse(JSON.stringify(resultFromDb))
+
+  return result.map((collection) => {
+    return { ...collection, id: collection._id, sharedWith: collection?.sharedWith.map((v) => v[1] ) }
+  })
 }
 
 //bookshelves
 export async function GetBookshelf(id: String, userId: String) {
   if (!isValidObjectId(id)) {
     console.error("Bookshelf id provided is not valid ");
-    return 
+    return
   }
   const bookshelfFromDb = await Bookshelf.findById(id)
   if (!doseItHaveAccessToThisBookshelf(userId, bookshelfFromDb)) return {}

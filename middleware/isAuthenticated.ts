@@ -19,9 +19,7 @@ export default async function isAuthenticated(req: Request, res: Response, next:
   if ( !req.body.jwt || req.body.jwt === "just a guest") return next()
 
   try {
-
     const decodedToken = await decodeJwt(req.body.jwt)
-    console.log("here", decodedToken);
     if (await User.findById(decodedToken, { username: true }))
       return next()
   } catch (error) {
