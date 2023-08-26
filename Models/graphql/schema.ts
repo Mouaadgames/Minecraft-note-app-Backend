@@ -1,5 +1,6 @@
 import { GetUser, GetCollection, GetCollections, GetBookshelf, GetBookshelves, GetBook, GetBooks } from "../../Controllers/getFromDbController"
 import { AddNewCollection } from "../../Controllers/setToDbController"
+import { EditThisCollection } from "../../Controllers/updateTheDbController";
 import { makeExecutableSchema } from '@graphql-tools/schema'
 
 const schema = `#graphql
@@ -51,9 +52,9 @@ const schema = `#graphql
 
   type Mutation {
     addCollection(name:String!,description:String!,sharedWith:[String],globalWriteAccess:Boolean):Collection
+    editCollection(collectionId:String!,name:String,description:String,sharedWith:[String],globalWriteAccess:Boolean):Collection
   }
 `
-
 
 
 const resolvers = {
@@ -83,6 +84,11 @@ const resolvers = {
       { name, description, sharedWith, globalWriteAccess }: { name: string, description: string, sharedWith?: string[], globalWriteAccess?: boolean },
       { currentUser }: { currentUser: string }) => {
       return AddNewCollection({ userId: currentUser, name, description, sharedWith, globalWriteAccess })
+    },
+    editCollection: (_: any,
+      { name, description, sharedWith, globalWriteAccess, collectionId }: { collectionId: string, name?: string, description?: string, sharedWith?: string[], globalWriteAccess?: boolean },
+      { currentUser }: { currentUser: string }) => {
+      return EditThisCollection({ userId: currentUser, collectionId, name, description, sharedWith, globalWriteAccess })
     }
   }
 }

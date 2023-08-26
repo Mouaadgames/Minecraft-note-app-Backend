@@ -1,12 +1,15 @@
 import { User } from "../Models/dbSchema/User";
 import { Collection } from "../Models/dbSchema/Collection";
 import { Bookshelf } from "../Models/dbSchema/Bookshelf";
+import { doseItHaveAccessToThisCollection } from "../Models/accessFunction";
 import { Book } from "../Models/dbSchema/Book";
-
+import { getUsersId } from "./getFromDbController";
 //creation Functions
 
 // new collection
 export async function AddNewCollection({ userId, name, description, sharedWith, globalWriteAccess }: { userId: string, name: string, description: string, sharedWith?: string[], globalWriteAccess?: boolean }) {
+  console.log("adding to db");
+
   const bookshelvesArray = await createNewBookshelves()
   const usersIds = await getUsersId(sharedWith)
   // add to user
@@ -25,10 +28,11 @@ export async function AddNewCollection({ userId, name, description, sharedWith, 
   // owner
   await User.findByIdAndUpdate(userId, { $push: { collectionOwned: insertedCollection.id } })
   //sharedWith
-  await User.updateMany(
-    { $or: usersIds.map((v) => { return { _id: v[0] } }) },
-    { $push: { collectionShared: insertedCollection.id } }
-  )
+  if (usersIds.length)
+    await User.updateMany(
+      { $or: usersIds.map((v) => { return { _id: v[0] } }) },
+      { $push: { collectionShared: insertedCollection.id } }
+    )
   //bookShelves
   // update in one query 
   await Bookshelf.updateMany(
@@ -55,15 +59,7 @@ async function createNewBookshelves() {
   return await Bookshelf.insertMany(newBookshelves)
 }
 
-async function getUsersId(names: string[] | undefined) { // return [[userId,userName],[...],...]
-  if (!names) return []
-  const usersSharedWithAndTheirIds = await User.find(
-    { $or: names.map(name => { return { username: name } }) },
-    { _id: true, username: true }
-  )
-  const result = usersSharedWithAndTheirIds.map(user => { return [user.id, user.username] })
-  return result
-}
+
 
 
 export async function AddNewBook() {
@@ -76,8 +72,6 @@ export async function AddNewBook() {
    * 
    */
 }
-
-
 
 
 

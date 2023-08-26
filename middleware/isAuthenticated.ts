@@ -16,7 +16,7 @@ function decodeJwt(jwtToken: string) {
 export default async function isAuthenticated(req: Request, res: Response, next: NextFunction) {
   // if () return res.status(401).json({ error: "Unauthorized" })
 
-  if ( !req.body.jwt || req.body.jwt === "just a guest") return next()
+  if (!req.body.jwt || req.body.jwt === "just a guest") return next()
 
   try {
     const decodedToken = await decodeJwt(req.body.jwt)

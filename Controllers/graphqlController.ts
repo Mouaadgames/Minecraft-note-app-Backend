@@ -21,5 +21,6 @@ export const graphqlHandler = async (req: Request, res: Response) => graphqlHTTP
   schema: executableSchema,
   context: { currentUser: await decodeJwt(req.body.jwt) },
   // rootValue: root, // you could fix it using ES6 classes and put as new Query() here
+  
   graphiql: true
 })(req, res)

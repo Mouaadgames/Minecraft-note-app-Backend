@@ -48,6 +48,8 @@ export async function GetCollection(id: String, userId: String) {
     console.error("collection id provided is not valid ");
     return
   }
+  console.log(id);
+
   const collectionFromDb = await Collection.findById(id)
   if (!doseItHaveAccessToThisCollection(userId, collectionFromDb)) return {}
   const result: collection = JSON.parse(JSON.stringify(collectionFromDb))
@@ -67,11 +69,14 @@ export async function GetCollections(ids: String[]) {
 
   let result: collection[] = JSON.parse(JSON.stringify(resultFromDb))
 
+  console.log(
+    result.map((collection) => {
+      return { ...collection, id: collection._id, sharedWith: collection?.sharedWith.map((v) => v[1]) }
+    }))
   return result.map((collection) => {
-    return { ...collection, id: collection._id, sharedWith: collection?.sharedWith.map((v) => v[1] ) }
+    return { ...collection, id: collection._id, sharedWith: collection?.sharedWith.map((v) => v[1]) }
   })
 }
-
 //bookshelves
 export async function GetBookshelf(id: String, userId: String) {
   if (!isValidObjectId(id)) {
@@ -117,5 +122,18 @@ export async function GetBooks(ids: String[]) {
 
   const result = await Book.find(findQuery)
   if (!result) return []
+  return result
+}
+
+
+export async function getUsersId(names: string[] | undefined) { // return [[userId,userName],[...],...]
+  console.log(names);
+  if (!names?.length) return []
+
+  const usersSharedWithAndTheirIds = await User.find(
+    { $or: names.map(name => { return { username: name } }) },
+    { _id: true, username: true }
+  )
+  const result = usersSharedWithAndTheirIds.map(user => { return [user.id, user.username] })
   return result
 }

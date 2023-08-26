@@ -20,7 +20,6 @@ app.use(cors({
   origin:
     (origin, callback) => {
       if (!origin) return callback(null, true)
-      console.log(origin)
       if (whitelist.indexOf(origin) !== -1) return callback(null, true)
 
       callback(new Error("nah"))
