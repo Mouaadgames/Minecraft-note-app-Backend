@@ -13,3 +13,5 @@
     jwt -> if not provided in the cookies ,
     query -> for graphql to work with
    }
+
+## API responds

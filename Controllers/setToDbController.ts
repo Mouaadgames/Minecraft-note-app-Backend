@@ -1,9 +1,8 @@
 import { User } from "../Models/dbSchema/User";
 import { Collection } from "../Models/dbSchema/Collection";
 import { Bookshelf } from "../Models/dbSchema/Bookshelf";
-import { doseItHaveAccessToThisCollection } from "../Models/accessFunction";
 import { Book } from "../Models/dbSchema/Book";
-import { getUsersId } from "./getFromDbController";
+import { GetBookshelf, getUsersId } from "./getFromDbController";
 //creation Functions
 
 // new collection
@@ -38,7 +37,7 @@ export async function AddNewCollection({ userId, name, description, sharedWith, 
   await Bookshelf.updateMany(
     { $or: bookshelvesArray.map(({ _id }) => { return { _id } }) },
     { $set: { parentCollection: insertedCollection.id } })
-  return insertedCollection
+  return true
 }
 
 
@@ -51,7 +50,7 @@ async function createNewBookshelves() {
       name: "bookshelf" + (i + 1).toString(),
       numberOfBooks: 0,
       filledPlaces: [false, false, false, false, false, false, false, false],
-      books: [],
+      books: Array(8), // with empty books
       parentCollection: "not set utile now from the server"
     })
   }
@@ -61,18 +60,42 @@ async function createNewBookshelves() {
 
 
 
-
-export async function AddNewBook() {
+//create book
+export async function AddNewBook(userId: string, bookshelfId: string, title: string, icon: number, readOnly?: boolean, hiddenFrom?: string[]) {
   /* TODO :
    * dose is have access to this book shelf (write access)
    * if it possible add add it (is not full)
    * create the book with the bookshelf id 
    * set the full place the the next empty place 
    * update the books ids in the bookshelves and the books counters in bookshelf and the corresponding collection
-   * 
-   */
+  */
+  //getting the bookShelf obj from db 
+  const currentBookshelf = await GetBookshelf(bookshelfId, userId)
+  if (!currentBookshelf) return false  //dose it return te data that we want or req is declined due to access,permission
+  if (currentBookshelf.numberOfBooks === 8) return false
+
+  const newBook = await Book.create({
+    name: title,
+    icon: icon,
+    numberOfPages: 0,
+    access: { readOnly, hiddenFrom },
+    bookshelf: currentBookshelf.id
+  })
+  let newEmptyPlace = 0
+  for (let i = 0; i < currentBookshelf.filledPlaces.length; i++) {
+    const place = currentBookshelf.filledPlaces[i];
+    console.log("checking this -", place, "- in this index : ", i);
+
+    if (!place) {
+      console.log("new empty place : ", i);
+      newEmptyPlace = i
+      break
+    }
+  }
+  currentBookshelf.books[newEmptyPlace] = newBook.id
+  currentBookshelf.filledPlaces[newEmptyPlace] = true
+  currentBookshelf.numberOfBooks++
+
+  await currentBookshelf.save()
+  return true
 }
-
-
-
-//linking Functions // think about this ???

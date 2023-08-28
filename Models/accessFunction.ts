@@ -1,7 +1,7 @@
 import { Collection } from "./dbSchema/Collection";
 import { Bookshelf } from "./dbSchema/Bookshelf";
 import { Book } from "./dbSchema/Book";
-import {Types} from "mongoose"
+import { Types } from "mongoose"
 
 type collectionType = {
   bookshelves: string[] | undefined;
@@ -12,9 +12,10 @@ type collectionType = {
   name?: string | undefined;
   numberOfBooks?: number | undefined;
 }
-export function doseItHaveAccessToThisCollection(userId: String, data: collectionType | null) {
+export function doseItHaveAccessToThisCollection(userId: String, data: collectionType | null, writeAccess: boolean = false) {
   if (userId === data?.owner) return true
   if (!data?.sharedWith?.length) return false
+  if (writeAccess && !data.globalWriteAccess) return false
   for (let i = 0; i < data?.sharedWith.length; i++) {
     const sharedWithUser = data?.sharedWith[i][0];
     if (userId === sharedWithUser) return true
@@ -29,10 +30,10 @@ type bookshelfType = {
   books: string[] | undefined;
   parentCollection: string | undefined;
 }
-export async function doseItHaveAccessToThisBookshelf(userId: String, data: bookshelfType | null) {
+export async function doseItHaveAccessToThisBookshelf(userId: String, data: bookshelfType | null, writeAccess:boolean = false) {
   const BookshelfCollectionId = data?.parentCollection
   const collectionData = await Collection.findById(BookshelfCollectionId, { owner: true, sharedWith: true })
-  return doseItHaveAccessToThisCollection(userId, collectionData)
+  return doseItHaveAccessToThisCollection(userId, collectionData,writeAccess)
 }
 
 type bookType = {
@@ -49,18 +50,13 @@ type bookType = {
     hiddenFrom: string[] | undefined
   } | undefined;
 }
-export async function doseItHaveAccessToThisBook(userId: String, data: bookType | null) {
+export async function doseItHaveAccessToThisBook(userId: String, data: bookType | null, writeAccess:boolean = false) {
   const BookBookshelfId = data?.bookshelf
-  const hiddenFrom = data?.access?.hiddenFrom
-  if (hiddenFrom) {
-    for (let i = 0; i < hiddenFrom.length; i++) {
-      const hiddenUserId = hiddenFrom[i];
-      if (userId === hiddenUserId) {
-        return false
-      }
-    }
+  if(writeAccess){
+    if(data?.access?.readOnly) return false
+    if(data?.access?.hiddenFrom?.includes(String(userId))) return false
   }
   const bookshelfData = await Bookshelf.findById(BookBookshelfId, { parentCollection: true })
-  return doseItHaveAccessToThisBookshelf(userId, bookshelfData)
+  return await doseItHaveAccessToThisBookshelf(userId, bookshelfData,writeAccess)
 }
 
