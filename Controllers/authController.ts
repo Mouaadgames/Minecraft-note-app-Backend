@@ -42,11 +42,11 @@ export async function loginHandler(req: Request, res: Response) {
 }
 
 export async function signupHandler(req: Request, res: Response) {
- /**
-  * 400 username or password dose not meet up the rules
-  * 409 username already exist
-  * 201 your in
-  */
+  /**
+   * 400 username or password dose not meet up the rules
+   * 409 username already exist
+   * 201 your in
+   */
 
   let { username, password } = req.body
 
@@ -65,9 +65,10 @@ export async function signupHandler(req: Request, res: Response) {
   const newUser = await User.create({ username, password })
 
   //create the JWT that contain the user id
-  res.cookie("jwt", createToken(newUser._id.toString()), { httpOnly: true, maxAge: jwtExpireTime * 1000 })
+  const jwt = createToken(newUser._id.toString())
+  res.cookie("jwt", jwt, { httpOnly: true, maxAge: jwtExpireTime * 1000 })
 
   //return JWT to the user
-  res.status(201).send({ jwt: "hello world first time" })
+  res.status(201).send({ jwt })
 }
 

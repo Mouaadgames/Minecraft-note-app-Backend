@@ -70,24 +70,26 @@ export async function AddNewBook(userId: string, bookshelfId: string, title: str
    * update the books ids in the bookshelves and the books counters in bookshelf and the corresponding collection
   */
   //getting the bookShelf obj from db 
-  const currentBookshelf = await GetBookshelf(bookshelfId, userId)
+  const currentBookshelf = await GetBookshelf(bookshelfId, userId, true)
   if (!currentBookshelf) return false  //dose it return te data that we want or req is declined due to access,permission
   if (currentBookshelf.numberOfBooks === 8) return false
-
+  const currentCollection = await Collection.findById(currentBookshelf.parentCollection, { globalWriteAccess: true, numberOfBooks: true })
+  if (!currentCollection) return false
   const newBook = await Book.create({
-    name: title,
+    title: title,
     icon: icon,
     numberOfPages: 0,
-    access: { readOnly, hiddenFrom },
+    access: {
+      readOnly: currentCollection?.globalWriteAccess, // TODO what if the collection is not shared
+      hiddenFrom: []
+    },
+    pages: [],
     bookshelf: currentBookshelf.id
   })
   let newEmptyPlace = 0
   for (let i = 0; i < currentBookshelf.filledPlaces.length; i++) {
     const place = currentBookshelf.filledPlaces[i];
-    console.log("checking this -", place, "- in this index : ", i);
-
     if (!place) {
-      console.log("new empty place : ", i);
       newEmptyPlace = i
       break
     }
@@ -95,7 +97,10 @@ export async function AddNewBook(userId: string, bookshelfId: string, title: str
   currentBookshelf.books[newEmptyPlace] = newBook.id
   currentBookshelf.filledPlaces[newEmptyPlace] = true
   currentBookshelf.numberOfBooks++
+  console.log(currentCollection);
 
+  currentCollection.numberOfBooks !== undefined && currentCollection.numberOfBooks++
   await currentBookshelf.save()
+  await currentCollection.save()
   return true
 }

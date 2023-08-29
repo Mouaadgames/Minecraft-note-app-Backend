@@ -30,33 +30,37 @@ type bookshelfType = {
   books: string[] | undefined;
   parentCollection: string | undefined;
 }
-export async function doseItHaveAccessToThisBookshelf(userId: String, data: bookshelfType | null, writeAccess:boolean = false) {
+export async function doseItHaveAccessToThisBookshelf(userId: String, data: bookshelfType | null, writeAccess: boolean = false) {
   const BookshelfCollectionId = data?.parentCollection
   const collectionData = await Collection.findById(BookshelfCollectionId, { owner: true, sharedWith: true })
-  return doseItHaveAccessToThisCollection(userId, collectionData,writeAccess)
+  return doseItHaveAccessToThisCollection(userId, collectionData, writeAccess)
 }
 
 type bookType = {
-  name: string;
-  numberOfPages: number;
-  icon: number;
+  title: string | undefined;
+  numberOfPages: number | undefined;
+  icon: number | undefined;
   pages: Types.DocumentArray<{
     lines: string[];
     pageNumber?: number | undefined;
-  }>;
+  }> | undefined;
   bookshelf?: string | undefined;
   access?: {
     readOnly?: boolean | undefined,
     hiddenFrom: string[] | undefined
   } | undefined;
-}
-export async function doseItHaveAccessToThisBook(userId: String, data: bookType | null, writeAccess:boolean = false) {
+} | null
+export async function doseItHaveAccessToThisBook(userId: String, data: bookType | null, writeAccess: boolean = false, skipRecurrent: boolean = false) {
   const BookBookshelfId = data?.bookshelf
-  if(writeAccess){
-    if(data?.access?.readOnly) return false
-    if(data?.access?.hiddenFrom?.includes(String(userId))) return false
-  }
   const bookshelfData = await Bookshelf.findById(BookBookshelfId, { parentCollection: true })
-  return await doseItHaveAccessToThisBookshelf(userId, bookshelfData,writeAccess)
+  if (writeAccess) {
+    const owner = (await Collection.findById(bookshelfData?.parentCollection, { owner: true }))?.owner
+    if (owner === userId) return true
+    if (data?.access?.readOnly) return false
+    if (data?.access?.hiddenFrom?.includes(String(userId))) return false
+  }
+  if (skipRecurrent) return false
+  return await doseItHaveAccessToThisBookshelf(userId, bookshelfData, writeAccess)
+  
 }
 

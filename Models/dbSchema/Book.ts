@@ -8,15 +8,15 @@ const pageSchema = new mongoose.Schema(
 )
 
 const bookSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  title: { type: String, required: true },
   numberOfPages: { type: Number, required: true },
   icon: { type: Number, required: true },
   pages: [pageSchema],
   access: {
-    readOnly: Boolean,
-    hiddenFrom: [String]
+    readOnly: Boolean, // if never be null that will defaults to the collection parameters and stay 
+    hiddenFrom: [String] // if nothing this will be an empty array
   },
-  bookshelf: String
+  bookshelf: { type: String, required: true }
 })
 
 export const Book = mongoose.model("Book", bookSchema)

@@ -79,13 +79,13 @@ export async function GetCollections(ids: String[]) {
   })
 }
 //bookshelves
-export async function GetBookshelf(id: String, userId: String) {
+export async function GetBookshelf(id: String, userId: String, writeAccess: boolean = false) {
   if (!isValidObjectId(id)) {
     console.error("Bookshelf id provided is not valid ");
     return
   }
   const bookshelfFromDb = await Bookshelf.findById(id)
-  if (!await doseItHaveAccessToThisBookshelf(userId, bookshelfFromDb)) return
+  if (!await doseItHaveAccessToThisBookshelf(userId, bookshelfFromDb, writeAccess)) return
 
   return bookshelfFromDb
 }
@@ -104,7 +104,7 @@ export async function GetBookshelves(ids: String[]) {
 
 //Books
 type bookType = {
-  name: string;
+  title: string;
   numberOfPages: number;
   icon: number;
   pages: Types.DocumentArray<{
@@ -131,37 +131,36 @@ function isHiddenFromThis(userId: String, data: bookType | null) {
   return false
 }
 
-export async function GetBookInfo(id: String, userId: String) {
+export async function GetBookInfo(id: String, userId: String, writeAccess: boolean = false) {
   if (!isValidObjectId(id)) {
     console.error("Book id provided is not valid ");
-    return 
+    return
   }
-  const bookFromDb = await Book.findById(id, { name: true, numberOfPages: true, icon: true, access: true ,bookshelf:true})
+  const bookFromDb = await Book.findById(id, { name: true, numberOfPages: true, icon: true, access: true, bookshelf: true })
 
-  if (!await doseItHaveAccessToThisBook(userId, bookFromDb)) return 
+  if (!await doseItHaveAccessToThisBook(userId, bookFromDb, writeAccess)) return
   console.log(bookFromDb);
 
   return {
     id: bookFromDb?.id,
-    title: bookFromDb?.name,
+    title: bookFromDb?.title,
     numberOfPages: bookFromDb?.numberOfPages,
     icon: bookFromDb?.icon,
     readOnly: bookFromDb?.access?.readOnly,
     isHidden: isHiddenFromThis(userId, bookFromDb),
     bookshelf: bookFromDb?.bookshelf,
     hiddenFrom: [], // TODO : only owner is abel to see this
-    pages: [] // TODO : make it limited and offset ed
   }
 }
 
 export async function GetBookPages(id: string, userId: string, pageLimit: number = 0, offset: number = 0) {
   if (!isValidObjectId(id)) {
     console.error("Book id provided is not valid ");
-    return 
+    return
   }
 
   const bookFromDb = await Book.findById(id, { "pages": { $slice: [offset, pageLimit] } })
-  if (!await doseItHaveAccessToThisBook(userId, bookFromDb)) return 
+  if (!await doseItHaveAccessToThisBook(userId, bookFromDb)) return
   console.log(bookFromDb);
   return bookFromDb
 
@@ -194,7 +193,7 @@ export async function GetBooks(ids: String[], userId: string) {
 
     return {
       id: book?.id,
-      title: book?.name,
+      title: book?.title,
       numberOfPages: book?.numberOfPages,
       icon: book?.icon,
       readOnly: book?.access?.readOnly,
