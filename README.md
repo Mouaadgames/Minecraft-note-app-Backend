@@ -24,3 +24,5 @@ install dependencies
 
 ## run 
 `npx ts-node app.ts`
+
+you can use the frontend included in this repo but it's outdated use the [new version](https://github.com/Mouaadgames/Minecraft-note-app)  
