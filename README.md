@@ -14,4 +14,13 @@
     query -> for graphql to work with
    }
 
-## API responds
+## setup steps
+install dependencies
+`npm i`
+
+### create mongodb database
+- install it and run it in your local machine if you want to change url you can find it in `app.ts`
+- create a DB named `MinecraftNotesDB`
+
+## run 
+`npx ts-node app.ts`
