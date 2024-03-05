@@ -10,6 +10,7 @@ config()
 
 
 import cors from "cors"
+import path from "path";
 const dbURI = "mongodb://127.0.0.1:27017/MinecraftNotesDB"
 const whitelist = ["http://localhost:5173", "http://localhost:3000"]
 const app = express()
@@ -29,12 +30,17 @@ app.use(cors({
 
 app.use(authRouter)
 app.use(graphqlRouter)
+app.use("^/$", (req, res) => {
+  console.log(req.path)
+  res.redirect("/login")
+})
+app.use(express.static(path.resolve(__dirname, "./build")))
 
-app.get('/', (req, res) => {
-  const userToken = req.body.jwt
-  console.log(userToken)
-  if (!userToken) return res.sendStatus(401)
-  res.send("hello")
+app.get("*", (req, res) => {
+  console.log(req.path);
+  console.log(path.resolve(__dirname, "./build/index.html"));
+
+  res.sendFile(path.resolve(__dirname, "./build/index.html"))
 })
 
 
