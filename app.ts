@@ -12,7 +12,7 @@ config()
 import cors from "cors"
 import path from "path";
 const dbURI = "mongodb://127.0.0.1:27017/MinecraftNotesDB"
-const whitelist = ["http://localhost:5173", "http://localhost:3000"]
+const whitelist = ["http://localhost:5174", "http://localhost:3000"]
 const app = express()
 console.info("");
 app.use(express.json())
@@ -21,9 +21,9 @@ app.use(cors({
   origin:
     (origin, callback) => {
       if (!origin) return callback(null, true)
-      if (whitelist.indexOf(origin) !== -1) return callback(null, true)
-
-      callback(new Error("nah"))
+      console.log("origin", origin)
+      if (whitelist.indexOf(origin) === -1) return callback(new Error("nah")) 
+      callback(null, true)
     },
   credentials: true
 }))
